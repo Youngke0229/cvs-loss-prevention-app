@@ -1,6 +1,6 @@
 # How these samples were drawn
 
-Seed: 0.576. Tool: DuckDB.
+Seed: 0.576. Tool: DuckDB. Drawn on 4 September 2026, from the same download described in section 4 of the data overview.
 
 **This is a sample. Counts and proportions here are not population figures.** Every number you want to report about Los Angeles crime must come from the full files, not from these two CSVs.
 

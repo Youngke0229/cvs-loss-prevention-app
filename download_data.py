@@ -25,11 +25,12 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/151.0 Safari/537.36"
 )
 
-# The portal serves each dataset as one CSV export. The eight-character string
-# in the URL (k7nn-b2ep) is the portal's permanent id for that dataset.
-# expected_bytes and sha256 describe the copy published on 1 September 2026.
-# The publisher refreshes these tables roughly every two weeks, so a later
-# download will be larger and will have a different checksum. That is normal.
+# The portal serves each dataset as one CSV export. The string in the URL
+# (k7nn-b2ep) is the portal's permanent id for that dataset.
+# expected_bytes and sha256 describe the copy downloaded on 4 September 2026,
+# which the server reported as last modified on 1 September 2026. The portal
+# does not publish a refresh schedule, so a later download will usually be
+# larger and will have a different checksum. That is normal.
 FILES = [
     {
         "name": "lapd_nibrs_offenses_k7nn-b2ep.csv",

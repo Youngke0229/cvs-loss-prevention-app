@@ -2,9 +2,11 @@
 
 This repository is the starting point for a team working with **LAPD NIBRS Offenses and Victims**, two open-data tables published by the Los Angeles Police Department on the City of Los Angeles open-data portal. One table holds one row per offense charged on a police report, the other holds one row per victim named on a police report, and together they cover crime reports taken inside the City of Los Angeles, almost all of them from March 2024 to August 2026. The repository does not hold the full data. It holds the data overview document, a small ready-made sample you can code against straight away, and a script that downloads the full files for you.
 
+**A note on accuracy.** The documents here were written with AI assistance and then checked against the linked official sources. Linked sources are authoritative. Unlinked statements, and anything marked "(unverified)", should be checked before you rely on them. Report mistakes to the professor.
+
 ## Files
 
-- `data_overview_lapd-nibrs.md`: the data overview. Industry context, example stakeholders and decisions, what is already well known, download instructions, the full data dictionary and the list of traps and gaps.
+- `data_overview_lapd-nibrs.md`: the data overview. Industry context, possible stakeholders and decisions (illustrative examples only), what is already well known, download instructions, the full data dictionary and the list of traps and gaps.
 - `download_data.py`: downloads both full CSV files into a `data` folder next to itself.
 - `sample/offenses_sample.csv` and `sample/victims_sample.csv`: a sample of both tables, drawn so that they join to each other exactly as the full files do.
 - `sample/README.md`: how the sample was drawn, and what you may and may not conclude from it.
