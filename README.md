@@ -23,7 +23,7 @@ cd dataset_lapd-nibrs
 uv run python download_data.py
 ```
 
-Section 4 of the data overview explains what the script prints, how long it takes, and how to download the same two files by clicking links in a browser instead. If the `git clone` line fails, you do not need it: the browser route in section 4 works on its own, and it tells you where to put the files.
+Section 4 of the data overview explains what the script prints, how long it takes, and how to download the same two files by clicking links in a browser instead. If the `git clone` line fails, you do not need it: the browser route in section 4 works on its own, and it tells you where to put the files. The same goes for the script: some servers block scripted requests, so if `download_data.py` prints an error, download the two files in the browser instead.
 
 ## How to use this repository
 

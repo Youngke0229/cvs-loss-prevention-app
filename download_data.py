@@ -9,6 +9,12 @@ each file and reports whether the server answered):
 
     uv run python download_data.py --check
 
+If this script fails, you do not need it. Some servers block scripted requests,
+and a proxy or network on your side can do the same. Download the same two
+files in the browser instead, using Route A in section 4 of the data overview,
+and put them in the data/ folder next to this script under the names listed in
+FILES below.
+
 Standard library only. Python 3.11 compatible.
 """
 
@@ -61,6 +67,9 @@ def check_one(item):
         response = open_url(item["url"])
     except Exception as error:  # any network or HTTP problem
         print("  FAILED " + item["name"] + ": " + str(error))
+        print("    Some servers block scripted requests. Download this file in")
+        print("    the browser instead, using Route A in section 4 of the data")
+        print("    overview, and put it in the data folder as " + item["name"])
         return False
     first = response.read(CHUNK)
     status = response.getcode()
@@ -97,6 +106,9 @@ def download_one(item, folder):
         response = open_url(item["url"])
     except Exception as error:
         print("  FAILED " + item["name"] + ": " + str(error))
+        print("    Some servers block scripted requests. Download this file in")
+        print("    the browser instead, using Route A in section 4 of the data")
+        print("    overview, and put it in the data folder as " + item["name"])
         return False
     total = 0
     handle = open(target, "wb")
@@ -137,6 +149,10 @@ def main():
             good = good + 1
     print(str(good) + " of " + str(len(FILES)) + " files ready.")
     if good < len(FILES):
+        print("Not everything downloaded. Do not debug this script: download the")
+        print("missing files in the browser, using Route A in section 4 of the")
+        print("data overview, and put them in the data folder under the names")
+        print("printed above. The rest of the document works the same either way.")
         sys.exit(1)
 
 
