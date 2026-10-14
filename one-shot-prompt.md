@@ -1,0 +1,240 @@
+# CVS Evening Loss-Prevention Navigator — one-shot build prompt
+
+## 00 — Vision
+
+The **Regional Loss Prevention Manager at CVS Health** in Los Angeles must decide, each quarter, **which five LAPD reporting districts should be prioritized for a second security guard on the evening shift (18:00–24:00)**. The manager then assigns guards to individual CVS stores within those priority districts using local store knowledge. Today this decision relies on store managers' intuition and monthly total incident counts, which cannot separate evening from daytime risk or distinguish shoplifting inside a store from robbery on the surrounding street.
+
+### What the tool is
+
+A one-screen Streamlit page. The manager selects one LAPD Area from a sidebar dropdown, and the page shows:
+
+- A ranked table of the top 10 RPT Dist Nos in that area by combined evening shoplifting (NIBR code 23C) and robbery (code 120) counts.
+- A bar chart of the same top 10.
+- A caption under both: "Reported offences, not actual crime. Evening = 18:00–24:00. January 2025 reporting break excluded."
+
+### What the manager cares about
+
+- Reducing shoplifting and robbery during the evening shift.
+- Keeping the guard budget under control by putting the second guard where the risk is highest.
+- Defending the allocation to regional leadership with a clear, data-backed shortlist.
+
+### Use cases
+
+1. Rank the top 10 RPT Dist Nos in one LAPD Area by combined evening 23C + 120 counts, to identify the five priority districts for a second guard.
+2. Compare LAPD Areas by combined evening counts, to decide which area to prioritise this quarter.
+3. Export the ranked table to justify the quarterly guard allocation to regional leadership.
+4. Exclude the January 2025 NIBRS reporting break so the ranking is not distorted by the system migration.
+
+## 01 — Design
+
+### Design principles
+
+1. **One piece, one job.** Each piece does one thing and can be checked alone on a tiny table.
+2. **Only Load touches the files. Only View touches the screen.** Everything else works on a pandas object in memory.
+3. **One place for each definition.** The evening window and the risk codes live in Filter.
+4. **Load once, filter and rank on every click.** The CSV is read once and cached; the filter and ranker run on the cached DataFrame.
+
+### Pieces
+
+| Piece | File | Owner | Receives | Returns |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. Load | `02-data.md` | Christian | the LAPD CSV path | a clean DataFrame |
+| 2. Area summary | `03-rank.md` | — | the clean DataFrame + date defaults | ranked counts for all 21 areas |
+| 3. Filter | `04-filter.md` | Youngke | the clean DataFrame + selected area + date defaults | the filtered DataFrame |
+| 4. Rank districts | `03-rank.md` | Khushi | the filtered DataFrame | a ranked top-10 district DataFrame |
+| 5. View | `05-view.md` | Deenal | both ranked DataFrames | the Streamlit page |
+| 6. Setup | `06-setup.md` | Amy | a config file | the starting defaults |
+
+### When each piece runs
+
+- Load: once, at startup (cached)
+- Setup: once, at startup
+- Area summary: after each date-window change
+- Filter: on every sidebar change
+- Rank districts: after each filter
+- View: after each rank
+
+### Real-world operation
+
+The offenses file is 471,285 rows and 143.4 MB (from `data_overview_lapd-nibrs.md`, section 4). The tool loads it all at startup and caches it with `@st.cache_data`. Each click only runs the filter and the ranker on the cached DataFrame, no re-read from disk. That is about 300–400 MB in memory, fine on a laptop.
+
+## 02 — Load and normalize data
+
+Build a loader that reads the local LAPD NIBRS offenses CSV snapshot and returns one normalized pandas DataFrame, `offenses`. One row represents one charged offense on a police report. Later pieces receive this table and must not reread or mutate the source CSV.
+
+| Input | Output | Purpose |
+|---|---|---|
+| `data/lapd_nibrs_offenses_k7nn-b2ep.csv` | `offenses` | Incident-level offense analysis |
+| `sample/offenses_sample.csv` | the same output | Development and loader checks before the full download is available |
+
+Keep the raw CSVs unchanged and do not commit the downloaded `data/` folder. Use pandas for the typed local CSV read. The full offenses file is about 143 MB with 471,285 rows, so later callers should pass the columns they need; use `usecols` rather than loading unneeded columns.
+
+### Required normalization
+
+- Read `CaseNo`, `UniqueNIBRNo`, `Time OCC`, `AREA`, and `RPT Dist No` as strings. Do not coerce `CaseNo` to a number: leading zeros matter and one value is the literal `RFC CITATION`.
+- Strip trailing whitespace from text fields, including `offenses["AREA NAME"]`.
+- Normalize `AREA` to two digits and `RPT Dist No` to four digits with zero padding. Preserve the original fields or document clearly when a normalized field replaces one.
+- Parse `Date Rptd` and `Date OCC` using the documented month-first format with invalid values coerced to missing. Do not silently discard missing or invalid dates; record their counts for the limitations/methodology piece.
+- Do not fill a blank value with a substantive value such as zero, `No`, or `Unknown` unless a later piece explicitly defines that transformation.
+- Remove unnecessary columns for the scope of the project **after** passing the raw CSV file as a variable.
+- After reading the CSV into the `offenses` DataFrame and before returning it,
+  create `Type of Crime` from every original column whose name ends in
+  `Crime`. For each offense, list the names of every such column whose value
+  is `Yes`, separated by `; `; one offense may therefore have more than one
+  listed type. Then remove the individual `*Crime` source columns from the
+  returned DataFrame. Preserve `NIBR Code`; Filter and Rank continue to use it
+  for the 23C/120 counts.
+
+The loader only normalizes formats and reports quality checks. It does not choose the tool's harm measures, remove plausible-looking records, impute missing values, or create rankings. In particular, later metric pieces must decide how to handle impossible `Date OCC` values, incomplete recent weeks, and zero latitude/longitude values before using those fields in a chart or map.
+
+### Done when
+
+1. The loader runs against the sample offenses CSV and the full offenses CSV using the same interface.
+2. It reports input and output row counts, missing parsed-date counts, and the number of distinct normalized `AREA` and `RPT Dist No` values.
+3. `UniqueNIBRNo` is unique in `offenses`; a failed check stops the build with an actionable error.
+4. The full snapshot check reports 471,285 offense rows and 21 normalized areas (the row total may differ after a publisher refresh, so display the observed total and download date).
+
+## 04 — Filter
+
+This piece keeps only the rows the manager cares about: evening shoplifting (NIBR code 23C) and robbery (code 120) in one LAPD Area, after the January 2025 reporting break.
+
+### Receives
+
+A cleaned pandas DataFrame from Load, with these columns:
+
+- `RPT Dist No` (4-character text)
+- `Time OCC` (4-character text)
+- `NIBR Code` (text)
+- `AREA NAME` (text)
+- `Date Rptd` (parsed as a date)
+
+Plus the selected LAPD Area name from the sidebar and `start`/`end` dates from
+Setup.
+
+### Returns
+
+A filtered DataFrame with the same columns, containing only rows where:
+
+1. `AREA NAME` equals the chosen area.
+2. `NIBR Code` is `"23C"` or `"120"`.
+3. `Time OCC` is between `"1800"` and `"2359"`.
+4. `Date Rptd` is inclusively between `start` and `end`.
+
+### Definitions and why
+
+The evening window and risk codes live in this file, in one place, as
+constants. Setup owns the date window.
+
+```python
+EVENING_START = "1800"
+EVENING_END = "2359"
+RISK_CODES = ["23C", "120"]
+```
+
+## 03 — Rank
+
+### Area summary
+
+The Area Summary calculation supports the all-area comparison before a manager
+chooses an area. It receives the normalized `offenses` DataFrame plus `start`
+and `end` from Setup. It applies the same `RISK_CODES`, evening window, and
+inclusive date range as Filter, but does not filter on area. It returns one
+row per `AREA NAME`, with `AREA NAME`, `shoplifting_incidents`,
+`robbery_incidents`, and `combined_incidents`, sorted by
+`combined_incidents` descending and then `AREA NAME` ascending.
+
+The area-comparison view uses this returned table; it must not recompute the
+counts or read the CSV.
+
+### District rank
+
+The Rank piece turns the filtered offense rows into the district-level table
+used by every results view. It receives the filtered DataFrame and `k` (an
+integer, default `10`) and returns a DataFrame with these columns:
+
+| Column | Definition |
+|---|---|
+| `rank` | One-based position after sorting |
+| `RPT Dist No` | Normalized four-character reporting-district identifier |
+| `shoplifting_incidents` | Count of filtered rows where `NIBR Code == "23C"` |
+| `robbery_incidents` | Count of filtered rows where `NIBR Code == "120"` |
+| `combined_incidents` | `shoplifting_incidents + robbery_incidents` |
+
+Count offense rows, not distinct `CaseNo` values: each row is one charged
+offense. Include a district when it has at least one qualifying row. Sort by
+`combined_incidents` descending, then `shoplifting_incidents` descending,
+then `robbery_incidents` descending, then `RPT Dist No` ascending for a
+deterministic tie-breaker. Return the first `k` rows; if fewer than `k`
+districts qualify, return every qualifying district.
+
+### Done when
+
+1. On a small invented table with two 23C rows and one 120 row in district
+   `0101`, and one 23C row in district `0102`, the result ranks `0101` first
+   with counts `2`, `1`, and `3`, followed by `0102` with counts `1`, `0`, and
+   `1`.
+2. A tie on all three count columns sorts the smaller normalized `RPT Dist No`
+   first.
+3. The View can render the returned DataFrame without recomputing counts.
+
+## 05 — Views
+
+All views use recorded incidents in the LAPD Area that are reported between 18:00 and 24:00, with NIBRS crime codes 23C (shoplifting) or 120 (robbery). Exclude January 2025.
+
+- **Ranked RPT Dist Nos** (`top10_districts`): a table of the top 10 RPT Dist Nos ranked by combined count of qualifying evening offences. Columns: rank, RPT Dist No, shoplifting incidents, robbery incidents, combined incidents. The first five rows are visually marked as the recommended priority-district shortlist; the manager assigns guards to individual stores within those districts. Option: `k`, default 10.
+- **Evening-risk bar chart** (`evening_risk_chart`): horizontal bar chart of the ranked top 10 RPT Dist Nos, sorted descending by incident count. X-axis: combined reported offences. Y-axis: RPT Dist No. Tooltip shows the shoplifting and robbery breakdown.
+- **Area comparison** (`area_comparison`): display-only bar chart ranking every LAPD Area by combined qualifying evening offences. This supports quarterly prioritisation before the manager selects an area from the sidebar dropdown.
+- **Export** (`export_ranked_table`): downloads the current ranked table as CSV, including the applied area, time window, offence codes, exclusion note, and export date.
+
+Every results view shows this caption: “Reported offenses, not actual crime. Evening = 18:00–24:00. Drop data from January 2025 reporting.”
+
+## 06 — Setup
+
+Setup reads the starting defaults (the LAPD Area shown when the page opens, and the time window) from one config file, checks them, and returns them as one object. Setup runs once at startup. It reads only its own config file: never the LAPD CSV (Load) and never the screen (View).
+
+### Config file — `configs/default.toml`
+
+```toml
+default_area = "Mission"     # Area preselected in the sidebar: the most evening 23C + 120 offences
+start        = 2025-02-01    # after the January 2025 NIBRS reporting break
+end          = 2026-07-31    # last complete month; August 2026 is still being entered
+```
+
+The page should open on the Area the manager is most likely to act on. In the team's sample (2025-02-01 to 2026-07-31, 18:00–23:59), Mission has the most evening 23C + 120 offences (33: 28 shoplifting, 5 robbery), just ahead of Pacific and Wilshire (32 each). The full data decides: if another Area ranks first there, that Area becomes the default.
+
+The tool uses this fixed, explicitly configured inclusive reporting range; it
+does not calculate a rolling window. At a quarterly review, the manager edits
+`start` and/or `end` in this file to select the intended comparison period;
+no code changes are required.
+
+### Contract — `src/setup.py`
+
+```python
+@dataclass(frozen=True)
+class Defaults:
+    default_area: str
+    start: date
+    end: date
+
+def load_defaults(path: Path = Path("configs/default.toml")) -> Defaults: ...
+```
+
+| Field | Passed to | Use |
+|---|---|---|
+| `default_area` | View | initial choice in the sidebar dropdown |
+| `start`, `end` | Filter | keeps rows with `start ≤ Date Rptd ≤ end` |
+
+### Checks
+
+`load_defaults` raises a `ValueError` naming the field and the bad value when:
+
+- `default_area` is not one of the 21 Area names: Central, Rampart, Southwest, Hollenbeck, Harbor, Hollywood, Wilshire, West LA, Van Nuys, West Valley, Northeast, 77th Street, Newton, Pacific, N Hollywood, Foothill, Devonshire, Southeast, Mission, Olympic, Topanga;
+- `start` is before 2025-02-01, or `end` is not after `start`;
+- a key is missing or unknown.
+
+### Done when
+
+1. `load_defaults()` on the default file returns `Defaults("Mission", date(2025, 2, 1), date(2026, 7, 31))`.
+2. A test file with `default_area = "Hollywod"` raises a `ValueError` whose message contains `Hollywod`; one with `start = 2024-06-01` raises one naming `start`.
+3. On the downloaded data, the month of `end` is complete: its count of reports (`Date Rptd`) is at least 90% of the median of the six months before it, and the month after it is not. In the team's sample, July 2026 has 991 reports against 870–1,004 in each of the six months before, and August 2026 has 663.
+4. On the full downloaded data, `default_area` is the Area with the most offences coded 23C or 120 with `Time OCC` from 1800 to 2359 and `Date Rptd` from `start` to `end`. If not, replace it with that Area.
