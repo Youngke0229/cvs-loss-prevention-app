@@ -41,13 +41,13 @@ The offenses file is 471,285 rows and 143.4 MB (from data_overview_lapd-nibrs.md
 ## Pieces
 
 | Piece | File | Owner | Receives | Returns |
-| :--- | :--- | :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :--- | :--- | 
 | 1. Load | `02-data.md` | Christian | the LAPD CSV path | a clean DataFrame |
 | 2. Filter | `03-filter.md` | Youngke | the clean DataFrame + the chosen LAPD Area | the filtered DataFrame |
 | 3. Rank | `04-rank.md` | Khushi | the filtered DataFrame | a sorted Series, top 10 |
 | 4. View | `05-view.md` | Deenal | the sorted Series | the Streamlit page |
 | 5. Setup | `06-setup.md` | Amy | a config file | the starting defaults |
-| 6. Combined | Evelyn | 
+
 
 ## When each piece runs
 
