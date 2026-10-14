@@ -1,0 +1,22 @@
+## Rank
+
+### 1. Job
+Rank the top 10 reporting districts (RPT Dist No) within the selected LAPD Area based on the total number of evening shoplifting (23C) and robbery (120) reports. This helps identify which districts have the highest reported crime counts.
+
+### 2. What It Receives and Returns
+- **Receives:** A filtered DataFrame containing crime reports for the selected LAPD Area, evening hours (18:00–24:00), crime codes 23C and 120, and dates after the January 2025 reporting break.
+- **Returns:** A Pandas Series containing the top 10 reporting districts and their combined crime counts, sorted from highest to lowest.
+
+### 3. Definitions and Choices (With Reasons)
+- **Group by `RPT Dist No`:** Groups crime reports by reporting district to compare different locations.
+- **Use `.size()`:** Counts the number of reports in each district.
+- **Use `.sort_values(ascending=False)`:** Ranks districts from highest to lowest crime count so the highest-risk districts appear first.
+- **Use `.head(10)`:** Keeps only the top 10 districts, matching the project vision.
+- **Combine 23C and 120:** Counts shoplifting and robbery reports together because both are relevant to the manager's security allocation decision.
+
+### 4. How to Check That It Works
+- Confirm the output contains no more than 10 reporting districts.
+- Check that the crime counts are sorted from highest to lowest.
+- Manually count reports for one district and compare the result.
+- Make sure districts with no qualifying reports do not appear.
+- Test with a small sample DataFrame where the expected rankings are already known.
