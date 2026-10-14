@@ -56,7 +56,4 @@ The offenses file is 471,285 rows and 143.4 MB (from data_overview_lapd-nibrs.md
 - Rank: after each filter
 - View: after each rank
 
-## Diagram
-[Load] → [Filter] → [Rank] → [View]
-↑
-[Setup]
+
