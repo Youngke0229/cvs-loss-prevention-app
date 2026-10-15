@@ -2,7 +2,7 @@
 
 ## 00 — Vision
 
-The **Regional Loss Prevention Manager at CVS Health** in Los Angeles must decide, each quarter, **which five LAPD reporting districts should be prioritized for a second security guard on the evening shift (18:00–24:00)**. The manager then assigns guards to individual CVS stores within those priority districts using local store knowledge. Today this decision relies on store managers' intuition and monthly total incident counts, which cannot separate evening from daytime risk or distinguish shoplifting inside a store from robbery on the surrounding street.
+The **Regional Loss Prevention Manager at CVS Health** in Los Angeles must decide, each quarter, **which five LAPD reporting districts should be prioritized for a second security guard on the evening shift (18:00–24:00)**. The manager then assigns guards to individual CVS stores within those priority districts using local store knowledge. Today this decision relies on store managers' intuition and monthly total incident counts, which cannot separate evening from daytime risk or distinguish shoplifting from robbery on the reporting-district level.
 
 ### What the tool is
 
@@ -25,38 +25,82 @@ A one-screen Streamlit page. The manager selects one LAPD Area from a sidebar dr
 3. Export the ranked table to justify the quarterly guard allocation to regional leadership.
 4. Exclude the January 2025 NIBRS reporting break so the ranking is not distorted by the system migration.
 
+
 ## 01 — Design
 
 ### Design principles
 
-1. **One piece, one job.** Each piece does one thing and can be checked alone on a tiny table.
-2. **Only Load touches the files. Only View touches the screen.** Everything else works on a pandas object in memory.
-3. **One place for each definition.** The evening window and the risk codes live in Filter.
-4. **Load once, filter and rank on every click.** The CSV is read once and cached; the filter and ranker run on the cached DataFrame.
+1. **One piece, one job.** Each piece has one responsibility and can be checked independently using a small sample DataFrame.
+2. **Only Load reads the offense CSV; only View renders the screen.** Setup reads only its configuration file. Filter and Rank work on pandas DataFrames in memory.
+3. **One place for each definition.** Filter defines the evening window and risk codes, which are reused by Area Summary. Setup owns the reporting-date window.
+4. **Load once, filter and rank on selection changes.** The normalized DataFrame is cached with `@st.cache_data`. Changing the selected LAPD Area reruns filtering and district ranking without rereading the CSV.
 
 ### Pieces
 
-| Piece | File | Owner | Receives | Returns |
-| :--- | :--- | :--- | :--- | :--- |
-| 1. Load | `02-data.md` | Christian | the LAPD CSV path | a clean DataFrame |
-| 2. Area summary | `03-rank.md` | — | the clean DataFrame + date defaults | ranked counts for all 21 areas |
-| 3. Filter | `04-filter.md` | Youngke | the clean DataFrame + selected area + date defaults | the filtered DataFrame |
-| 4. Rank districts | `03-rank.md` | Khushi | the filtered DataFrame | a ranked top-10 district DataFrame |
-| 5. View | `05-view.md` | Deenal | both ranked DataFrames | the Streamlit page |
-| 6. Setup | `06-setup.md` | Amy | a config file | the starting defaults |
+| Piece | Implementation file | Owner | Receives | Returns |
+|---|---|---|---|---|
+| 1. Load | `src/data.py` | Christian | LAPD offenses CSV path | Normalized offenses DataFrame |
+| 2. Setup | `src/setup.py` | Amy | `configs/default.toml` | Validated starting defaults |
+| 3. Filter | `src/filter.py` | Youngke | Normalized DataFrame, selected Area, start/end dates | Filtered offense DataFrame |
+| 4. Area Summary | `src/rank.py` | Khushi | Normalized DataFrame, start/end dates | Ranked counts for all 21 LAPD Areas |
+| 5. Rank Districts | `src/rank.py` | Khushi | Filtered DataFrame, `k=10` | Ranked top-10 district DataFrame |
+| 6. View | `src/view.py` | Deenal | Area Summary and ranked district DataFrames | Streamlit page |
 
 ### When each piece runs
 
-- Load: once, at startup (cached)
-- Setup: once, at startup
-- Area summary: after each date-window change
-- Filter: on every sidebar change
-- Rank districts: after each filter
-- View: after each rank
+- **Load:** At application startup. Cache the result so sidebar interactions do not reread the CSV.
+- **Setup:** At application startup. Read and validate the default Area and reporting dates.
+- **Area Summary:** After Load and Setup, using the configured date window. Recalculate when the application reloads with updated configuration.
+- **Filter:** At startup and whenever the selected LAPD Area changes.
+- **Rank Districts:** After Filter, using the filtered DataFrame.
+- **View:** At startup and after sidebar changes, displaying the current rankings and charts.
+
+The reporting-date window is configured in `configs/default.toml`, not through the Streamlit interface. Updated configuration values take effect when the application reloads them.
 
 ### Real-world operation
 
-The offenses file is 471,285 rows and 143.4 MB (from `data_overview_lapd-nibrs.md`, section 4). The tool loads it all at startup and caches it with `@st.cache_data`. Each click only runs the filter and the ranker on the cached DataFrame, no re-read from disk. That is about 300–400 MB in memory, fine on a laptop.
+The LAPD offenses file contains 471,285 rows and is approximately 143.4 MB in the September 2026 snapshot (`data_overview_lapd-nibrs.md`, section 4).
+
+Load uses pandas with explicit column types and `usecols` to read only the fields required for the application and the specified normalization steps.
+
+The normalized DataFrame is cached using `@st.cache_data`. Sidebar interactions reuse the cached data and do not reread the source CSV.
+
+The initial application runs locally with Python, pandas, and Streamlit. Keep the raw CSV unchanged and exclude the downloaded `data/` directory from Git.
+
+For later cloud deployment, provide the same data snapshot and configuration in the deployment environment while preserving the existing module interfaces.
+
+### Build order and run
+
+Build and verify the application in this order:
+
+1. Implement Load and validate the normalized DataFrame against the sample CSV.
+2. Implement Setup and verify the configuration defaults.
+3. Implement Filter and test the Area, offense-code, evening-time, and reporting-date boundaries.
+4. Implement Area Summary and Rank Districts, reusing Filter's shared definitions.
+5. Implement View and connect the modules through `app.py`.
+6. Run the application and check the outputs against the module-level "Done when" tests.
+
+**Environment:** Python with pandas and Streamlit. Declare dependencies in `requirements.txt`.
+
+**Entry point:** `app.py`
+
+**Run locally:**
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+### Integration checks — Done when
+
+1. The application opens with the configured default LAPD Area.
+2. The Area comparison displays ranked counts for the configured reporting-date window.
+3. The district table and bar chart show the same top-10 reporting districts and combined offense counts.
+4. The first five districts are clearly identified as the priority shortlist.
+5. Changing the selected Area updates the district table and chart without rereading the offenses CSV.
+6. Exporting the ranked table produces a CSV matching the displayed results and includes the required context.
+7. An Area with no qualifying offenses displays an empty result without crashing.
+8. The application runs locally using the documented installation and startup commands.
 
 ## 02 — Load and normalize data
 
@@ -103,7 +147,7 @@ This piece keeps only the rows the manager cares about: evening shoplifting (NIB
 A cleaned pandas DataFrame from Load, with these columns:
 
 - `RPT Dist No` (4-character text)
-- `Time OCC` (4-character text)
+- `Time OCC` (zero-padded 4-character HHMM text)
 - `NIBR Code` (text)
 - `AREA NAME` (text)
 - `Date Rptd` (parsed as a date)
@@ -120,6 +164,8 @@ A filtered DataFrame with the same columns, containing only rows where:
 3. `Time OCC` is between `"1800"` and `"2359"`.
 4. `Date Rptd` is inclusively between `start` and `end`.
 
+Rows with missing or invalid `Time OCC` or `Date Rptd` values are excluded. The original DataFrame is not modified. If no rows match, return an empty DataFrame with the same columns.
+
 ### Definitions and why
 
 The evening window and risk codes live in this file, in one place, as
@@ -129,6 +175,29 @@ constants. Setup owns the date window.
 EVENING_START = "1800"
 EVENING_END = "2359"
 RISK_CODES = ["23C", "120"]
+```
+
+### Contract — `src/filter.py`
+
+```python
+def filter_offenses(
+    offenses: pd.DataFrame,
+    selected_area: str,
+    start: date,
+    end: date,
+) -> pd.DataFrame:
+    ...
+```
+
+Filter operates on the in-memory DataFrame and does not read files, aggregate counts, or rank districts.
+
+### Done when
+
+1. Only the selected LAPD Area and NIBR codes `23C` and `120` are retained.
+2. Records at `1800` and `2359` are included; records at `1759` and `0000` are excluded.
+3. Records on both `start` and `end` dates are included; records outside the range are excluded.
+4. Missing or invalid dates and times are excluded.
+5. The input DataFrame remains unchanged, and an empty result preserves the original columns.
 ```
 
 ## 03 — Rank
