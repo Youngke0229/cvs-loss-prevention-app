@@ -139,7 +139,7 @@ The loader only normalizes formats and reports quality checks. It does not choos
 4. The full snapshot check reports 471,285 offense rows and 21 normalized areas (the row total may differ after a publisher refresh, so display the observed total and download date).
 
 
-## 04 — Filter
+## 03 — Filter
 
 This piece keeps only the rows the manager cares about: evening shoplifting (NIBR code 23C) and robbery (code 120) in one LAPD Area, after the January 2025 reporting break.
 
@@ -199,7 +199,7 @@ Filter operates on the in-memory DataFrame and does not read files, aggregate co
 5. The input DataFrame remains unchanged, and an empty result preserves the original columns.
 
 
-## 03 — Rank
+## 04 — Rank
 
 ### Area summary
 
