@@ -62,3 +62,44 @@ ranked = (
 6. **Empty input:** Confirm that a filtered DataFrame with no rows returns an empty Series without an error.
 
 **Handoff to View:** Pass the ranked Series directly to View for its table and bar chart.
+
+## code
+This out put returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents
+
+```python
+import pandas as pd
+
+def area_summary(offenses: pd.DataFrame, start, end) -> pd.DataFrame:
+    """
+    Calculate the evening risk summary for all LAPD Areas for use in the area comparison view.
+    """
+    # 1. Apply the same time, risk codes, and date range as Filter (without binding to a specific Area)
+    mask = (
+        (offenses["NIBR Code"].isin(["23C", "120"])) &
+        (offenses["Time OCC"] >= "1800") &
+        (offenses["Time OCC"] <= "2359") &
+        (offenses["Date Rptd"] >= pd.to_datetime(start)) &
+        (offenses["Date Rptd"] <= pd.to_datetime(end))
+    )
+    filtered = offenses[mask].copy()
+    
+    # 2. Create helper numeric columns for aggregation
+    filtered["is_shoplifting"] = (filtered["NIBR Code"] == "23C").astype(int)
+    filtered["is_robbery"] = (filtered["NIBR Code"] == "120").astype(int)
+    
+    # 3. Group by AREA NAME and sum the incidents
+    summary = filtered.groupby("AREA NAME").agg(
+        shoplifting_incidents=("is_shoplifting", "sum"),
+        robbery_incidents=("is_robbery", "sum")
+    ).reset_index()
+    
+    summary["combined_incidents"] = summary["shoplifting_incidents"] + summary["robbery_incidents"]
+    
+    # 4. Sort by combined_incidents descending, then AREA NAME ascending
+    summary = summary.sort_values(
+        by=["combined_incidents", "AREA NAME"],
+        ascending=[False, True]
+    ).reset_index(drop=True)
+    
+    return summary
+```
