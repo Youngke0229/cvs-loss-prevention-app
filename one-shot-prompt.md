@@ -10,7 +10,7 @@ A one-screen Streamlit page. The manager selects one LAPD Area from a sidebar dr
 
 - A ranked table of the top 10 RPT Dist Nos in that area by combined evening shoplifting (NIBR code 23C) and robbery (code 120) counts.
 - A bar chart of the same top 10.
-- A caption under both: "Reported offences, not actual crime. Evening = 18:00–24:00. January 2025 reporting break excluded."
+- A caption under both: "Reported offenses, not actual crime. Evening = 18:00–24:00. January 2025 reporting break excluded."
 
 ### What the manager cares about
 
@@ -45,6 +45,8 @@ A one-screen Streamlit page. The manager selects one LAPD Area from a sidebar dr
 | 4. Area Summary | `src/rank.py` | Khushi, Evelyn | Normalized DataFrame, start/end dates | Ranked counts for all 21 LAPD Areas |
 | 5. Rank Districts | `src/rank.py` | Khushi | Filtered DataFrame, `k=10` | Ranked top-10 district DataFrame |
 | 6. View | `src/view.py` | Deenal | Area Summary and ranked district DataFrames | Streamlit page |
+
+Both Area Summary and Rank Districts live in `src/rank.py`. Area Summary is written by Evelyn, Rank Districts by Khushi, in separate functions with separate tests.
 
 ### When each piece runs
 
@@ -264,8 +266,8 @@ Setup reads the starting defaults (the LAPD Area shown when the page opens, and 
 
 ```toml
 default_area = "Mission"     # Area preselected in the sidebar: the most evening 23C + 120 offences
-start        = 2025-02-01    # after the January 2025 NIBRS reporting break
-end          = 2026-07-31    # last complete month; August 2026 is still being entered
+start        = "2025-02-01"    # after the January 2025 NIBRS reporting break
+end          = "2026-07-31"    # last complete month; August 2026 is still being entered
 ```
 
 The page should open on the Area the manager is most likely to act on. In the team's sample (2025-02-01 to 2026-07-31, 18:00–23:59), Mission has the most evening 23C + 120 offences (33: 28 shoplifting, 5 robbery), just ahead of Pacific and Wilshire (32 each). The full data decides: if another Area ranks first there, that Area becomes the default.
