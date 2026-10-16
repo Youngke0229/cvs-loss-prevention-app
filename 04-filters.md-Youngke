@@ -35,7 +35,7 @@ START_DATE = "2025-02-01"
 ```
 
 ## Code
-Save only rows where the area matches the chosen area, the NIBR code is "23C" or "120", the time of occurrence is between "1800" and "2359", and the report date is on or after February 1, 2025
+Keep only rows where the area matches the chosen area, the NIBR code is "23C" or "120", the time of occurrence is between "1800" and "2359", and the report date is on or after February 1, 2025
 import pandas as pd.
 
 # Constants defined in one place
