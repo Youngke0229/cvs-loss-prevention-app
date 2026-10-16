@@ -63,7 +63,7 @@ ranked = (
 
 **Handoff to View:** Pass the ranked Series directly to View for its table and bar chart.
 
-## code
+## Code
 This out put returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents
 
 ```python
