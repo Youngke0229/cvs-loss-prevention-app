@@ -64,7 +64,7 @@ ranked = (
 **Handoff to View:** Pass the ranked Series directly to View for its table and bar chart.
 
 ## Code
-This output returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents
+This output returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents. The resulting table is sorted by combined_incidents in descending order, followed by AREA NAME in ascending order as a secondary sort.
 
 ```python
 import pandas as pd
