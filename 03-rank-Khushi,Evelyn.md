@@ -105,7 +105,7 @@ def area_summary(offenses: pd.DataFrame, start, end) -> pd.DataFrame:
 ```
 Step 2:
 
-This output returns the top 10 reporting districts results.
+This output returns the top 10 reporting districts and sets the index starting from 1.
 
 ```python
 def rank_districts(filtered_df: pd.DataFrame, k: int = 10) -> pd.DataFrame:
