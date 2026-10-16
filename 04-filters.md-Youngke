@@ -38,6 +38,8 @@ START_DATE = "2025-02-01"
 Keep only rows where the area matches the chosen area, the NIBR code is "23C" or "120", the time of occurrence is between "1800" and "2359", and the report date is on or after February 1, 2025
 import pandas as pd.
 
+'''
+Python
 # Constants defined in one place
 EVENING_START = "1800"
 EVENING_END = "2359"
@@ -81,3 +83,4 @@ def filter_offenses(
 
     filtered_df = df[mask].reset_index(drop=True)
     return filtered_df
+'''
