@@ -64,7 +64,7 @@ ranked = (
 **Handoff to View:** Pass the ranked Series directly to View for its table and bar chart.
 
 ## Code
-This output returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents. The resulting table is sorted by combined_incidents in descending order, followed by AREA NAME in ascending order as a secondary sort.
+Step 1: This output returns a summary table with one row per AREA NAME, containing the following columns: AREA NAME, shoplifting_incidents, robbery_incidents, and combined_incidents. The resulting table is sorted by combined_incidents in descending order, followed by AREA NAME in ascending order as a secondary sort.
 
 ```python
 import pandas as pd
@@ -102,4 +102,17 @@ def area_summary(offenses: pd.DataFrame, start, end) -> pd.DataFrame:
     ).reset_index(drop=True)
     
     return summary
+```
+Step 2:
+
+This output returns the top 10 reporting districts results.
+
+```python
+def rank_districts(filtered_df: pd.DataFrame, k: int = 10) -> pd.DataFrame:
+    # Assign 1-based rank and return the top k rows
+    grouped["rank"] = grouped.index + 1
+    grouped = grouped[["rank", "RPT Dist No", "shoplifting_incidents", "robbery_incidents", "combined_incidents"]]
+    
+    # Returns the first 10 rows, or all qualifying rows if fewer than 10 exist
+    return grouped.head(k)
 ```
