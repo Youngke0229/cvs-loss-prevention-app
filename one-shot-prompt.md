@@ -40,7 +40,7 @@ A one-screen Streamlit page. The manager selects one LAPD Area from a sidebar dr
 | Piece | Implementation file | Owner | Receives | Returns |
 |---|---|---|---|---|
 | 1. Load | `src/data.py` | Christian | LAPD offenses CSV path | Normalized offenses DataFrame |
-| 2. Setup | `src/setup.py` | Amy | `configs/default.toml` | Validated starting defaults |
+| 2. Setup | `src/setup.py` | Yutong Wu | `configs/default.toml` | Validated starting defaults |
 | 3. Filter | `src/filter.py` | Youngke Li | Normalized DataFrame, selected Area, start/end dates | Filtered offense DataFrame |
 | 4. Area Summary | `src/rank.py` | Khushi | Normalized DataFrame, start/end dates | Ranked counts for all 21 LAPD Areas |
 | 5. Rank Districts | `src/rank.py` | Khushi | Filtered DataFrame, `k=10` | Ranked top-10 district DataFrame |
