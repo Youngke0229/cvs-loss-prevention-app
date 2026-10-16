@@ -1,4 +1,4 @@
-# CVS Evening Loss-Prevention Navigator — one-shot build prompt
+# CVS Evening Loss-Prevention Navigator — One-Shot Build Prompt
 
 ## 00 — Vision
 
