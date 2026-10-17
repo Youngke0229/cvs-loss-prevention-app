@@ -1,3 +1,5 @@
+Team repository: https://github.com/christiancabello-usc/dso576-project-M1
+
 # CVS Evening Loss-Prevention Navigator — One-Shot Build Prompt
 
 ## 00 — Vision
@@ -199,7 +201,6 @@ Filter operates on the in-memory DataFrame and does not read files, aggregate co
 3. Records on both `start` and `end` dates are included; records outside the range are excluded.
 4. Missing or invalid dates and times are excluded.
 5. The input DataFrame remains unchanged, and an empty result preserves the original columns.
-
 
 ## 04 — Rank
 
