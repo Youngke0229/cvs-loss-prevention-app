@@ -119,9 +119,9 @@ Keep the raw CSVs unchanged and do not commit the downloaded `data/` folder. Use
 
 ### Required normalization
 
-- Read `CaseNo`, `UniqueNIBRNo`, `Time OCC`, `AREA`, and `RPT Dist No` as strings. Do not coerce `CaseNo` to a number: leading zeros matter and one value is the literal `RFC CITATION`.
+- Read `CaseNo`, `UniqueNIBRNo`, `Time OCC`, `AREA`, and `RPT Dist No` as strings. Do not coerce `CaseNo` to a number: leading zeros matter and one value is the literal `RFC CITATION`. Normalize valid `Time OCC` values to zero-padded four-character `HHMM` text; leave blank, malformed, or impossible times missing, and record their count for the limitations/methodology piece.
 - Strip trailing whitespace from text fields, including `offenses["AREA NAME"]`.
-- Normalize `AREA` to two digits and `RPT Dist No` to four digits with zero padding. Preserve the original fields or document clearly when a normalized field replaces one.
+- Replace `AREA` with its two-digit zero-padded normalized text and `RPT Dist No` with its four-digit zero-padded normalized text. Leave missing values missing.
 - Parse `Date Rptd` and `Date OCC` using the documented month-first format with invalid values coerced to missing. Do not silently discard missing or invalid dates; record their counts for the limitations/methodology piece.
 - Do not fill a blank value with a substantive value such as zero, `No`, or `Unknown` unless a later piece explicitly defines that transformation.
 - Remove unnecessary columns for the scope of the project **after** passing the raw CSV file as a variable.
