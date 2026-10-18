@@ -238,6 +238,8 @@ then `robbery_incidents` descending, then `RPT Dist No` ascending for a
 deterministic tie-breaker. Return the first `k` rows; if fewer than `k`
 districts qualify, return every qualifying district.
 
+If no district has a qualifying offense, return an empty DataFrame with **all five output columns in the documented order**, rather than returning `None` or raising an error. Validate `k` as a positive integer; an invalid value (for example, `0`, `-1`, or a string) raises a `ValueError` that mentions `k`. For a valid `k`, return no more than `k` rows and number `rank` consecutively from 1. Do not change the filtered input DataFrame.
+
 ### Done when
 
 1. On a small invented table with two 23C rows and one 120 row in district
