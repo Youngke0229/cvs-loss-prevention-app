@@ -105,6 +105,9 @@ streamlit run app.py
 6. Exporting the ranked table produces a CSV matching the displayed results and includes the required context.
 7. An Area with no qualifying offenses displays an empty result without crashing.
 8. The application runs locally using the documented installation and startup commands.
+9. The config fits the downloaded data (checked after Load and Area Summary; Setup never reads the CSV):
+   - `default_area` is the first row of the Area Summary for `start`–`end`; if not, set `default_area` to that Area in `configs/default.toml`.
+   - The month of `end` is complete: its `Date Rptd` count is at least 90% of the median of the six months before it, and the month after it is not. Sample: July 2026 has 991 reports against 870–1,004; August 2026 has 663.
 
 ## 02 — Load and normalize data
 
@@ -274,7 +277,7 @@ start        = "2025-02-01"    # after the January 2025 NIBRS reporting break
 end          = "2026-07-31"    # last complete month; August 2026 is still being entered
 ```
 
-The page should open on the Area the manager is most likely to act on. In the team's sample (2025-02-01 to 2026-07-31, 18:00–23:59), Mission has the most evening 23C + 120 offences (33: 28 shoplifting, 5 robbery), just ahead of Pacific and Wilshire (32 each). The full data decides: if another Area ranks first there, that Area becomes the default.
+The page should open on the Area the manager is most likely to act on. In the team's sample (2025-02-01 to 2026-07-31, 18:00–23:59), Mission has the most evening 23C + 120 offences (33: 28 shoplifting, 5 robbery), just ahead of Pacific and Wilshire (32 each). The full data decides (Integration check 9).
 
 The tool uses this fixed, explicitly configured inclusive reporting range; it
 does not calculate a rolling window. At a quarterly review, the manager edits
@@ -310,5 +313,3 @@ def load_defaults(path: Path = Path("configs/default.toml")) -> Defaults: ...
 
 1. `load_defaults()` on the default file returns `Defaults("Mission", date(2025, 2, 1), date(2026, 7, 31))`.
 2. A test file with `default_area = "Hollywod"` raises a `ValueError` whose message contains `Hollywod`; one with `start = 2024-06-01` raises one naming `start`.
-3. On the downloaded data, the month of `end` is complete: its count of reports (`Date Rptd`) is at least 90% of the median of the six months before it, and the month after it is not. In the team's sample, July 2026 has 991 reports against 870–1,004 in each of the six months before, and August 2026 has 663.
-4. On the full downloaded data, `default_area` is the Area with the most offences coded 23C or 120 with `Time OCC` from 1800 to 2359 and `Date Rptd` from `start` to `end`. If not, replace it with that Area.
