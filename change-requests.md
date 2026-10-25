@@ -94,3 +94,20 @@ A filled request (from the class lottery app):
 - **Change:** Rewrite the first Setup check in the prompt to test the logical rule (e.g., "assert that the default Area equals the first row of the Area Summary for the configured window") instead of hardcoding the sample's Mission/July values.
 - **Priority:** medium
 - **Status:** open
+
+### CR-07: Rank the top five districts across selected Areas
+
+- **From:** Christian Cabello, 2026-10-25
+- **Part:** Area selection / district-priority ranking
+- **Evidence:** The app’s single-Area selection prevents managers from seeing one prioritized district list across multiple Areas. Comparing separate rankings manually makes it harder to allocate guards across Area boundaries.
+- **Change:** Allow managers to select multiple Areas and rank the top five districts overall across those selections, using the chosen reporting period and ranking measure. Show each district’s Area and offense breakdown, and label the results as a combined ranking.
+- **Priority:** medium
+- **Status:** open
+
+### CR-08: Show Area offense totals without hover
+- **From:** Christian Cabello, 2026-10-25
+- **Part:** Area comparison / district priorities
+- **Evidence:** The Area comparison shows incident counts only in bar tooltips, so users must hover to see the selected Area’s shoplifting, robbery, and combined totals.
+- **Change:** Display the selected Area’s shoplifting, robbery, and combined incident totals beneath its district-priorities heading.
+- **Priority:** medium
+- **Status:** open
