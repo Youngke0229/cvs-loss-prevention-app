@@ -58,3 +58,21 @@ A filled request (from the class lottery app):
 - **Change:** Add reporting-period options such as the most recent complete quarter, the previous 12 months, and the full available period. Update the area comparison, district ranking, chart, and CSV to use the selected period.
 - **Priority:** high
 - **Status:** open
+
+### CR-05: App footer shows inflated row count due to data duplication
+
+- **From:** Youngke Li, 2026-10-25
+- **Part:** Data Load / Source footer
+- **Evidence:** At the bottom of the app page, the footer says "498,741 offense rows". However, the official dataset documentation states the offenses CSV has exactly 471,285 rows. This indicates a fan-out error (likely a many-to-many merge) that duplicated about 27,000 rows, inflating every single number on the screen.
+- **Change:** Fix the Load piece to deduplicate the data (e.g., on `UniqueNIBRNo`) before passing it to the Filter. Ensure the total row count exactly matches the raw CSV (471,285).
+- **Priority:** high
+- **Status:** open
+
+### CR-06: Remove contradictory hardcoded sample values in the Setup check
+
+- **From:** Youngke Li, 2026-10-25
+- **Part:** Setup check (Prompt instructions)
+- **Evidence:** The `one-shot-prompt.md` contains a check that hardcodes sample values (expecting the default Area to be "Mission" and the end date to be July 2026). This contradicts the actual rule that the default Area should dynamically be the one with the highest offenses. If the data updates, the hardcoded test will fail.
+- **Change:** Rewrite the first Setup check in the prompt to test the logical rule (e.g., "assert that the default Area equals the first row of the Area Summary for the configured window") instead of hardcoding the sample's Mission/July values.
+- **Priority:** medium
+- **Status:** open
