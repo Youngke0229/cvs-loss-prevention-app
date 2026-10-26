@@ -111,3 +111,21 @@ A filled request (from the class lottery app):
 - **Change:** Display the selected Area’s shoplifting, robbery, and combined incident totals beneath its district-priorities heading.
 - **Priority:** medium
 - **Status:** open
+
+### CR-09: Apply the date window to when the offense occurred, not when it was reported
+
+- **From:** Yutong (Amy) Wu, 2026-10-25
+- **Part:** Filter (`src/filter.py`) and Area Summary: reporting-date window and the January 2025 exclusion
+- **Evidence:** The prompt filters time of day on `Time OCC` (when the offense occurred) but the date window on `Date Rptd` (when it was reported). In the team sample, with 2025-02-01 to 2026-07-31 and 18:00–23:59, 5 of the 432 qualifying 23C/120 rows occurred before 2025-02-01, 2 of them in January 2025, yet they are counted because they were reported later. The caption tells the manager January 2025 is excluded, and section 05 says offenses "reported between 18:00 and 24:00", which mixes up the two fields.
+- **Change:** Filter the date window on `Date OCC`, the same basis as the evening window, so offenses that occurred in or before January 2025 are excluded. Report how many rows are dropped for a missing or invalid `Date OCC`, and correct the section 05 wording.
+- **Priority:** medium
+- **Status:** open
+
+### CR-10: Count distinct reports, or label the counts as offenses
+
+- **From:** Yutong (Amy) Wu, 2026-10-25
+- **Part:** Rank Districts and Area Summary: `shoplifting_incidents`, `robbery_incidents`, `combined_incidents`
+- **Evidence:** The columns and chart say "incidents", but section 04 counts offense rows. In the team sample, the 432 qualifying rows come from only 430 reports: case `C259034514` has both a shoplifting and a robbery offense, and case `25094971` has two robbery offenses, so each report counts twice. A manager reads "incidents" as separate events and may overrate a district where reports carry several offenses.
+- **Change:** Either add a count of distinct reports (`CaseNo`) beside the offense counts and say which one the ranking uses, or rename the columns and chart axis to "offenses" so the number means what it says.
+- **Priority:** medium
+- **Status:** open
