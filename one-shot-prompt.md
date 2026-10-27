@@ -127,6 +127,7 @@ Keep the raw CSVs unchanged and do not commit the downloaded `data/` folder. Use
 - Replace `AREA` with its two-digit zero-padded normalized text and `RPT Dist No` with its four-digit zero-padded normalized text. Leave missing values missing.
 - Parse `Date Rptd` and `Date OCC` using the documented month-first format with invalid values coerced to missing. Do not silently discard missing or invalid dates; record their counts for the limitations/methodology piece.
 - Do not fill a blank value with a substantive value such as zero, `No`, or `Unknown` unless a later piece explicitly defines that transformation.
+- **Deduplicate the DataFrame.** Drop duplicate rows based on `UniqueNIBRNo` to prevent fan-out errors. The final loaded DataFrame must have exactly 471,285 rows.
 - Remove unnecessary columns for the scope of the project **after** passing the raw CSV file as a variable.
 - After reading the CSV into the `offenses` DataFrame and before returning it,
   create `Type of Crime` from every original column whose name ends in
@@ -159,6 +160,7 @@ A cleaned pandas DataFrame from Load, with these columns:
 - `NIBR Code` (text)
 - `AREA NAME` (text)
 - `Date Rptd` (parsed as a date)
+- `Date OCC` (parsed as a date)
 
 Plus the selected LAPD Area name from the sidebar and `start`/`end` dates from Setup.
 
@@ -169,7 +171,7 @@ A filtered DataFrame with the same columns, containing only rows where:
 1. `AREA NAME` equals the chosen area.
 2. `NIBR Code` is `"23C"` or `"120"`.
 3. `Time OCC` is between `"1800"` and `"2359"`.
-4. `Date Rptd` is inclusively between `start` and `end`.
+4. `Date OCC` is inclusively between `start` and `end`.
 
 Rows with missing or invalid `Time OCC` or `Date Rptd` values are excluded. The original DataFrame is not modified. If no rows match, return an empty DataFrame with the same columns.
 
@@ -209,13 +211,7 @@ Filter operates on the in-memory DataFrame and does not read files, aggregate co
 
 ### Area summary
 
-The Area Summary calculation supports the all-area comparison before a manager
-chooses an area. It receives the normalized `offenses` DataFrame plus `start`
-and `end` from Setup. It applies the same `RISK_CODES`, evening window, and
-inclusive date range as Filter, but does not filter on area. It returns one
-row per `AREA NAME`, with `AREA NAME`, `shoplifting_incidents`,
-`robbery_incidents`, and `combined_incidents`, sorted by
-`combined_incidents` descending and then `AREA NAME` ascending.
+The Area Summary calculation supports the all-area comparison before a manager chooses an area. It receives the normalized `offenses` DataFrame plus `start` and `end` from Setup. It applies the same `RISK_CODES`, evening window, and inclusive date range (on `Date OCC`) as Filter, but does not filter on area. It returns one row per `AREA NAME`, with `AREA NAME`, `shoplifting_incidents`, `robbery_incidents`, and `combined_incidents`, sorted by `combined_incidents` descending and then `AREA NAME` ascending.
 
 The area-comparison view uses this returned table; it must not recompute the
 counts or read the CSV.
@@ -299,7 +295,7 @@ def load_defaults(path: Path = Path("configs/default.toml")) -> Defaults: ...
 | Field | Passed to | Use |
 |---|---|---|
 | `default_area` | View | initial choice in the sidebar dropdown |
-| `start`, `end` | Filter | keeps rows with `start ≤ Date Rptd ≤ end` |
+| `start`, `end` | Filter | keeps rows with `start ≤ Date OCC ≤ end` |
 
 ### Checks
 
