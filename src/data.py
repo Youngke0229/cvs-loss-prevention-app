@@ -35,6 +35,7 @@ def load_offenses(path: str | Path) -> pd.DataFrame:
         'distinct_AREA': int(offenses['AREA'].nunique()),
         'distinct_RPT_Dist_No': int(offenses['RPT Dist No'].nunique()),
     }
+    offenses = offenses.drop_duplicates(subset=["UniqueNIBRNo"])
     return offenses
 
 @st.cache_data(show_spinner=False)
